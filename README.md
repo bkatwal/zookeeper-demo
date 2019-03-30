@@ -12,3 +12,4 @@ java -Dserver.port=8082 -Dzk.url=localhost:2181 -Dleader.algo=2 -jar target/bkat
 java -Dserver.port=8081 -Dzk.url=localhost:2181 -Dleader.algo=2 -jar target/bkatwal-zookeeper-demo-1.0-SNAPSHOT.jar
 ```
 `server.port` is spring app server port, `zk.url` is your zookeeper connection string and `leader.algo` if passed `2`, application will use ephemeral sequential znodes for leader election else will use ephemeral znodes.
+3. Look at swagger for API documentation for API details, Access swagger UI at `/swagger-ui.html`
