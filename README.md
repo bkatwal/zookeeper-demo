@@ -15,3 +15,6 @@ java -Dserver.port=8081 -Dzk.url=localhost:2181 -Dleader.algo=2 -jar target/bkat
 
 
 #### Look at swagger for API documentation for API details, Access swagger UI at `/swagger-ui.html`
+`GET /clusterInfo` - This API will display all the nodes in cluster, current list of live nodes and current master.
+`GET /persons` - This API will display all the saved Person
+`PUT /person/{id}/{name}` - Use this to save person data.
