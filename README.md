@@ -2,6 +2,20 @@
 
 ![alt text](https://github.com/bkatwal/zookeeper-demo/blob/master/ZookeeperDemo.png)
 
+## Key features supported:
+
+- Model a database that is replicated across multiple servers.
+
+- The system should scale horizontally, meaning if any new server instance is added to the cluster, it should have the latest data and start serving update/read requests.
+
+- Data consistency. All update requests will be forwarded to the leader, and then the leader will broadcast data to all active servers and then returns the update status.
+
+- Data can be read from any of the replicas without any inconsistencies.
+
+- All server in the cluster will store the cluster state — Information like, who is the leader and server state(list of live/dead servers in the cluster). This info is required by the leader server to broadcast update request to active servers, and active follower servers need to forward any update request to their leader.
+
+- In the event of a change in the cluster state(leader goes down/any server goes down), all servers in the cluster need to be notified and store the latest change in local cluster data storage.
+
 ## Setup and Usage
 
 1. Install and start Apache Zookeeper in any port. Follow guide: https://zookeeper.apache.org/doc/r3.1.2/zookeeperStarted.html
