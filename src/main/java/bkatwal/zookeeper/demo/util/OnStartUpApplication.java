@@ -5,12 +5,12 @@ import static bkatwal.zookeeper.demo.util.ZkDemoUtil.ELECTION_NODE;
 import static bkatwal.zookeeper.demo.util.ZkDemoUtil.ELECTION_NODE_2;
 import static bkatwal.zookeeper.demo.util.ZkDemoUtil.LIVE_NODES;
 import static bkatwal.zookeeper.demo.util.ZkDemoUtil.getHostPostOfServer;
+import static bkatwal.zookeeper.demo.util.ZkDemoUtil.isEmpty;
 
 import bkatwal.zookeeper.demo.api.ZkService;
 import bkatwal.zookeeper.demo.model.Person;
 import java.util.List;
 import org.I0Itec.zkclient.IZkChildListener;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -36,7 +36,7 @@ public class OnStartUpApplication implements ApplicationListener<ContextRefreshe
       zkService.createAllParentNodes();
 
       String leaderElectionAlgo = System.getProperty("leader.algo");
-      if (Strings.isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
+      if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
         zkService.createNodeInElectionZnode(getHostPostOfServer());
         ClusterInfo.getClusterInfo().setMaster(zkService.getLeaderNodeData2());
       } else {
@@ -56,7 +56,7 @@ public class OnStartUpApplication implements ApplicationListener<ContextRefreshe
       ClusterInfo.getClusterInfo().getLiveNodes().clear();
       ClusterInfo.getClusterInfo().getLiveNodes().addAll(zkService.getLiveNodes());
 
-      if (Strings.isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
+      if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
         zkService.createWatchersForChildChange(ELECTION_NODE_2, masterChangeListener);
       } else {
         zkService.createWatchersForChildChange(ELECTION_NODE, masterChangeListener);

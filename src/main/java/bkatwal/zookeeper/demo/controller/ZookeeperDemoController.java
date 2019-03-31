@@ -1,11 +1,13 @@
 package bkatwal.zookeeper.demo.controller;
 
 import static bkatwal.zookeeper.demo.util.ZkDemoUtil.getHostPostOfServer;
+import static bkatwal.zookeeper.demo.util.ZkDemoUtil.isEmpty;
 
 import bkatwal.zookeeper.demo.model.Person;
 import bkatwal.zookeeper.demo.util.ClusterInfo;
 import bkatwal.zookeeper.demo.util.DataStorage;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -23,49 +25,72 @@ public class ZookeeperDemoController {
 
   private RestTemplate restTemplate = new RestTemplate();
 
-  @PutMapping("/leaderUpdate/{id}/{name}")
-  public ResponseEntity<String> savePersonFromLeader(
-      @PathVariable("id") Integer id, @PathVariable("name") String name) {
-
-    Person person = new Person(id, name);
-    DataStorage.setPerson(person);
-    return ResponseEntity.ok("SUCCESS");
-  }
-
   @PutMapping("/person/{id}/{name}")
   public ResponseEntity<String> savePerson(
-      @PathVariable("id") Integer id, @PathVariable("name") String name) {
+      HttpServletRequest request,
+      @PathVariable("id") Integer id,
+      @PathVariable("name") String name) {
 
-    List<String> liveNodes = ClusterInfo.getClusterInfo().getLiveNodes();
-
-    int successCount = 0;
-    for (String node : liveNodes) {
-
-      if (getHostPostOfServer().equals(node)) {
-        Person person = new Person(id, name);
-        DataStorage.setPerson(person);
-        successCount++;
-      } else {
-        String requestUrl =
-            "http://"
-                .concat(node)
-                .concat("leaderUpdate")
-                .concat("/")
-                .concat(String.valueOf(id))
-                .concat("/")
-                .concat(name);
-        HttpHeaders headers = new HttpHeaders();
-
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-        restTemplate.exchange(requestUrl, HttpMethod.PUT, entity, String.class).getBody();
-        successCount++;
-      }
+    String requestFrom = request.getHeader("request_from");
+    String leader = ClusterInfo.getClusterInfo().getMaster();
+    if (!isEmpty(requestFrom) && requestFrom.equalsIgnoreCase(leader)) {
+      Person person = new Person(id, name);
+      DataStorage.setPerson(person);
+      return ResponseEntity.ok("SUCCESS");
     }
+    // If I am leader I will broadcast data to all live node, else forward request to leader
+    if (amILeader()) {
+      List<String> liveNodes = ClusterInfo.getClusterInfo().getLiveNodes();
 
-    return ResponseEntity.ok()
-        .body("Successfully update ".concat(String.valueOf(successCount)).concat(" nodes"));
+      int successCount = 0;
+      for (String node : liveNodes) {
+
+        if (getHostPostOfServer().equals(node)) {
+          Person person = new Person(id, name);
+          DataStorage.setPerson(person);
+          successCount++;
+        } else {
+          String requestUrl =
+              "http://"
+                  .concat(node)
+                  .concat("person")
+                  .concat("/")
+                  .concat(String.valueOf(id))
+                  .concat("/")
+                  .concat(name);
+          HttpHeaders headers = new HttpHeaders();
+          headers.add("request_from", leader);
+          headers.setContentType(MediaType.APPLICATION_JSON);
+
+          HttpEntity<String> entity = new HttpEntity<>(headers);
+          restTemplate.exchange(requestUrl, HttpMethod.PUT, entity, String.class).getBody();
+          successCount++;
+        }
+      }
+
+      return ResponseEntity.ok()
+          .body("Successfully update ".concat(String.valueOf(successCount)).concat(" nodes"));
+    } else {
+      String requestUrl =
+          "http://"
+              .concat(leader)
+              .concat("person")
+              .concat("/")
+              .concat(String.valueOf(id))
+              .concat("/")
+              .concat(name);
+      HttpHeaders headers = new HttpHeaders();
+
+      headers.setContentType(MediaType.APPLICATION_JSON);
+
+      HttpEntity<String> entity = new HttpEntity<>(headers);
+      return restTemplate.exchange(requestUrl, HttpMethod.PUT, entity, String.class);
+    }
+  }
+
+  private boolean amILeader() {
+    String leader = ClusterInfo.getClusterInfo().getMaster();
+    return getHostPostOfServer().equals(leader);
   }
 
   @GetMapping("/persons")
