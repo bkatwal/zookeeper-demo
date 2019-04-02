@@ -25,6 +25,7 @@ public class ZkServiceImpl implements ZkService {
 
   private ZkClient zkClient;
 
+  
   public ZkServiceImpl(String hostPort) {
     zkClient = new ZkClient(hostPort, 12000, 3000, new StringSerializer());
   }

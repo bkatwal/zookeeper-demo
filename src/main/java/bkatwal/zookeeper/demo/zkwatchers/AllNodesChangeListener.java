@@ -10,11 +10,14 @@ import org.I0Itec.zkclient.IZkChildListener;
 public class AllNodesChangeListener implements IZkChildListener {
 
   /**
-   * This will listen to persistent znode This will be triggered if any new node is added to the
-   * cluster or if the node is permanently delete from the cluster
+   * - This method will be invoked for any change in /all_nodes children
+   * - During registering this
+   * listener make sure you register with path /all_nodes
+   * - after receiving notification it will update the local clusterInfo object
    *
-   * @param parentPath
-   * @param currentChildren
+   * @param parentPath this will be passed as /all_nodes
+   * @param currentChildren current list of children, children's string value is znode name which is
+   *     set as server hostname
    */
   @Override
   public void handleChildChange(String parentPath, List<String> currentChildren) {

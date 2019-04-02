@@ -18,7 +18,7 @@ public class MasterChangeListenerApproach2 implements IZkChildListener {
   private ZkService zkService;
 
   /**
-   * listens for deletion of sequential znode "node_i" under /election znode and updates the
+   * listens for deletion of sequential znode under /election znode and updates the
    * clusterinfo
    *
    * @param parentPath
@@ -29,10 +29,15 @@ public class MasterChangeListenerApproach2 implements IZkChildListener {
     if (currentChildren.isEmpty()) {
       throw new RuntimeException("No node exists to select master!!");
     } else {
+      //get least sequenced znode
       Collections.sort(currentChildren);
       String masterZNode = currentChildren.get(0);
+
+      // once znode is fetched, fetch the znode data to get the hostname of new leader
       String masterNode = zkService.getZNodeData(ELECTION_NODE_2.concat("/").concat(masterZNode));
       log.info("new master is: {}", masterNode);
+
+      //update the cluster info with new leader
       ClusterInfo.getClusterInfo().setMaster(masterNode);
     }
   }

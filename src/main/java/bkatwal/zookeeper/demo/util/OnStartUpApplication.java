@@ -36,8 +36,20 @@ public class OnStartUpApplication implements ApplicationListener<ContextRefreshe
   @Override
   public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
     try {
+
+      // create all parent nodes /election, /all_nodes, /live_nodes
       zkService.createAllParentNodes();
+
+      // add this server to cluster by creating znode under /all_nodes, with name as "host:port"
+      zkService.addToAllNodes(getHostPostOfServer(), "cluster node");
+      ClusterInfo.getClusterInfo().getAllNodes().clear();
+      ClusterInfo.getClusterInfo().getAllNodes().addAll(zkService.getAllNodes());
+
+      // check which leader election algorithm(1 or 2) need is used
       String leaderElectionAlgo = System.getProperty("leader.algo");
+
+      // if approach 2 - create ephemeral sequential znode in /election
+      // then get children of  /election and fetch least sequenced znode, among children znodes
       if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
         zkService.createNodeInElectionZnode(getHostPostOfServer());
         ClusterInfo.getClusterInfo().setMaster(zkService.getLeaderNodeData2());
@@ -48,16 +60,18 @@ public class OnStartUpApplication implements ApplicationListener<ContextRefreshe
           ClusterInfo.getClusterInfo().setMaster(zkService.getLeaderNodeData());
         }
       }
-      zkService.addToAllNodes(getHostPostOfServer(), "cluster node");
-      ClusterInfo.getClusterInfo().getAllNodes().clear();
-      ClusterInfo.getClusterInfo().getAllNodes().addAll(zkService.getAllNodes());
-      // before syncing you might want to add new znode for this node inside znode "/recovering"
-      // for recovering state, once recovered add to live node
+
+      // sync person data from master
       syncDataFromMaster();
+
+      // add child znode under /live_node, to tell other servers that this server is ready to serve
+      // read request
       zkService.addToLiveNodes(getHostPostOfServer(), "cluster node");
       ClusterInfo.getClusterInfo().getLiveNodes().clear();
       ClusterInfo.getClusterInfo().getLiveNodes().addAll(zkService.getLiveNodes());
 
+      // register watchers for leader change, live nodes change, all nodes change and zk session
+      // state change
       if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
         zkService.registerChildrenChangeWatcher(ELECTION_NODE_2, masterChangeListener);
       } else {

@@ -40,6 +40,7 @@ public class ConnectStateChangeListener implements IZkStateListener {
     ClusterInfo.getClusterInfo().getLiveNodes().addAll(zkService.getLiveNodes());
 
     // re try creating znode under /election
+    // this is needed, if there is only one server in cluster
     String leaderElectionAlgo = System.getProperty("leader.algo");
     if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
       zkService.createNodeInElectionZnode(getHostPostOfServer());
