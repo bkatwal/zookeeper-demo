@@ -2,6 +2,7 @@ package bkatwal.zookeeper.demo.api;
 
 import java.util.List;
 import org.I0Itec.zkclient.IZkChildListener;
+import org.I0Itec.zkclient.IZkStateListener;
 
 /** @author "Bikas Katwal" 26/03/19 */
 public interface ZkService {
@@ -30,5 +31,7 @@ public interface ZkService {
 
   void createNodeInElectionZnode(String data);
 
-  void createWatchersForChildChange(String path, IZkChildListener iZkChildListener);
+  void registerChildrenChangeWatcher(String path, IZkChildListener iZkChildListener);
+
+  void registerZkSessionStateListener(IZkStateListener iZkStateListener);
 }

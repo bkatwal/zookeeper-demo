@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.IZkChildListener;
+import org.I0Itec.zkclient.IZkStateListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.apache.zookeeper.CreateMode;
@@ -143,7 +144,12 @@ public class ZkServiceImpl implements ZkService {
   }
 
   @Override
-  public void createWatchersForChildChange(String path, IZkChildListener iZkChildListener) {
+  public void registerChildrenChangeWatcher(String path, IZkChildListener iZkChildListener) {
     zkClient.subscribeChildChanges(path, iZkChildListener);
+  }
+
+  @Override
+  public void registerZkSessionStateListener(IZkStateListener iZkStateListener) {
+    zkClient.subscribeStateChanges(iZkStateListener);
   }
 }

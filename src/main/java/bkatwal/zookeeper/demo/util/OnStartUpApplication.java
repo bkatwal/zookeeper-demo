@@ -11,6 +11,7 @@ import bkatwal.zookeeper.demo.api.ZkService;
 import bkatwal.zookeeper.demo.model.Person;
 import java.util.List;
 import org.I0Itec.zkclient.IZkChildListener;
+import org.I0Itec.zkclient.IZkStateListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -30,11 +31,12 @@ public class OnStartUpApplication implements ApplicationListener<ContextRefreshe
 
   @Autowired private IZkChildListener masterChangeListener;
 
+  @Autowired private IZkStateListener connectStateChangeListener;
+
   @Override
   public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
     try {
       zkService.createAllParentNodes();
-
       String leaderElectionAlgo = System.getProperty("leader.algo");
       if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
         zkService.createNodeInElectionZnode(getHostPostOfServer());
@@ -57,13 +59,13 @@ public class OnStartUpApplication implements ApplicationListener<ContextRefreshe
       ClusterInfo.getClusterInfo().getLiveNodes().addAll(zkService.getLiveNodes());
 
       if (isEmpty(leaderElectionAlgo) || "2".equals(leaderElectionAlgo)) {
-        zkService.createWatchersForChildChange(ELECTION_NODE_2, masterChangeListener);
+        zkService.registerChildrenChangeWatcher(ELECTION_NODE_2, masterChangeListener);
       } else {
-        zkService.createWatchersForChildChange(ELECTION_NODE, masterChangeListener);
+        zkService.registerChildrenChangeWatcher(ELECTION_NODE, masterChangeListener);
       }
-      zkService.createWatchersForChildChange(LIVE_NODES, liveNodeChangeListener);
-      zkService.createWatchersForChildChange(ALL_NODES, allNodesChangeListener);
-
+      zkService.registerChildrenChangeWatcher(LIVE_NODES, liveNodeChangeListener);
+      zkService.registerChildrenChangeWatcher(ALL_NODES, allNodesChangeListener);
+      zkService.registerZkSessionStateListener(connectStateChangeListener);
     } catch (Exception e) {
       throw new RuntimeException("Startup failed!!", e);
     }
